@@ -123,7 +123,10 @@ mapeamento_etapa = {
     '1º Período (1ª Série)': 'Ensino Médio',
     '2º Período (2ª Série)': 'Ensino Médio',
     '3º Período (3ª Série)': 'Ensino Médio',
+    '1° PERÍODO': 'Ensino Médio',
+    '2° PERÍODO': 'Ensino Médio',
     '3° PERÍODO': 'Ensino Médio',
+    '4° PERÍODO': 'Ensino Médio',
     '1º MÓDULO': 'Ensino Médio',
     '1º MODULO': 'Ensino Médio',
     '2° MÓDULO': 'Ensino Médio',
@@ -132,12 +135,16 @@ mapeamento_etapa = {
     '3º MODULO': 'Ensino Médio',
     '4º MÓDULO': 'Ensino Médio',
     '4º MODULO': 'Ensino Médio',
+    'BLOCO A': 'Ensino Médio',
     'BLOCO B': 'Ensino Médio',
     'BLOCO C': 'Ensino Médio',
     'BLOCO D': 'Ensino Médio',
     '5º PERÍODO (8° E 9° ANO - ANOS FINAIS)': 'Ens. Fund. - Anos Finais',
     '4º PERÍODO (6° E 7° ANO - ANOS FINAIS)': 'Ens. Fund. - Anos Finais',
+    '1º SEMESTRE': 'Ensino Médio',
     '2º SEMESTRE': 'Ensino Médio',
+    '3º SEMESTRE': 'Ensino Médio',
+    '4º SEMESTRE': 'Ensino Médio',
     'UNICA': 'Ens. Fund. - Anos Finais'
 }
 
