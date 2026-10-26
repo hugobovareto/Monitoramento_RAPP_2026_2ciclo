@@ -19,6 +19,7 @@ Enturmação.
 São usadas as seguintes fontes de informação:
 - Redash das avaliações de RAPP - Rendimento e Participação;
 - Relatórios de Acompanhamento de Turmas e Progressão Parcial. 
+- Dados finais do painel de monitoramento de RAPP - 1º ciclo
 
 
 1) Redash das avaliações de RAPP:
@@ -45,6 +46,8 @@ Considerar somente com os componentes da Formação Geral Básica da BNCC (sem E
 - Química;
 - Sociologia.
 
+3) Dados finais do painel de monitoramento de RAPP - 1º ciclo:
+Para saber os estudantes aprovados no 1º ciclo e que devem ser retirados da base geral do 2º ciclo.
 
 Excluir duplicatas do df_enturmados, considerando as colunas 'MATRÍCULA' e 'COMPONENTE CURRICULAR'.
 Seguir o ordenamento de preferência:
@@ -56,6 +59,8 @@ Tratamentos:
 Estudante é considerado enturmado se aparece no Relatório de Acompanhamento de Turmas e Progressão Parcial.
 Componente está aprovado se a nota (presente no redash for >= 60).
 Estudante com 'SITUAÇÃO FINAL' = APROVADO no Relatório de Acompanhamento de Turmas e Progressão Parcial é considerado aprovado, mesmo que não tenha feito a prova Plurall.
+A nota desse estudante será a nota em 'MÉDIA FINAL'.
+Estudante com 'MÉDIA FINAL' >= 60 no Relatório de Acompanhamento de Turmas e Progressão Parcial é considerado aprovado, mesmo que não tenha feito a prova Plurall.
 A nota desse estudante será a nota em 'MÉDIA FINAL'.
 '''
 
@@ -228,12 +233,23 @@ df_final.loc[mask, 'rendimento (%)'] = df_final.loc[mask, 'MÉDIA FINAL']
 df_final.loc[mask, 'Situação'] = 'Aprovado'
 
 
-# Excluir as colunas 'SITUAÇÃO FINAL' e 'MÉDIA FINAL' do df_merged
+# Estudantes com 'MÉDIA FINAL' >= 60 são considerados aprovados, mesmo que não tenham feito a prova Plurall.
+# A nota desse estudante é a nota que está em 'MÉDIA FINAL'.
+
+# Identifica estudantes com MÉDIA FINAL maior ou igual a 60
+mask = df_final['MÉDIA FINAL'].ge(60)
+
+# Atualiza rendimento e situação
+df_final.loc[mask, 'rendimento (%)'] = df_final.loc[mask, 'MÉDIA FINAL']
+df_final.loc[mask, 'Situação'] = 'Aprovado'
+
+
+# Excluir as colunas 'SITUAÇÃO FINAL' e 'MÉDIA FINAL' do df_final
 df_final = df_final.drop(columns=['SITUAÇÃO FINAL', 'MÉDIA FINAL'])
 
 
 # Carregar dados do Redash (para ter nota e tempo de prova do estudante)
-df_redash = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\SEEC-RN_-_Rendimento_e_participação_dos_alunos_p_provas_-_RAPP_-_Avaliações_em_andamento_2026_10_19.csv")
+df_redash = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\SEEC-RN_-_Rendimento_e_participação_dos_alunos_p_provas_-_RAPP_-_Avaliações_em_andamento_2026_10_26.csv")
 
 # Manter somente os valores que possuem '2º Ciclo' e '2º ciclo' na coluna 'name'
 df_redash = df_redash[df_redash['name'].str.contains('2º ciclo', case=False, na=False)]
@@ -361,8 +377,29 @@ df_merged = df_merged[
 # Na coluna 'quantidade_reaberturas', substituir valores nulos por 0
 df_merged['quantidade_reaberturas'] = df_merged['quantidade_reaberturas'].fillna(0).astype(int)
 
+
+
+# Carregar dados dos estudantes do 1º ciclo que foram aprovados, para retirar da base geral do 2º ciclo
+df_1ciclo = pd.read_excel(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\1ciclo_Relatorio_Monitoramento_componentes.xlsx")
+
+
+# Retirar da base geral do 2º ciclo os estudantes que foram aprovados no 1º ciclo
+# Filtra no df_1ciclo apenas os registros aprovados
+df_aprovados = df_1ciclo.loc[
+    df_1ciclo['SITUAÇÃO'].eq('Aprovado'),
+    ['MATRÍCULA', 'COMPONENTE']
+]
+
+# Exclui do df_merged as linhas com a mesma matrícula e componente do df_aprovados
+df_merged = df_merged.loc[
+    ~df_merged.set_index(['MATRÍCULA', 'COMPONENTE CURRICULAR']).index.isin(
+        df_aprovados.set_index(['MATRÍCULA', 'COMPONENTE']).index
+    )
+].copy()
+
+
 # Exportar a base final em Excel para usar na aplicação em Google Apps Script
-df_merged.to_excel(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261019_Monitoramento_RAPP.xlsx", index=False)
+df_merged.to_excel(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261026_Monitoramento_RAPP.xlsx", index=False)
 
 
 
@@ -437,7 +474,7 @@ import re
 
 
 # Carregar os dados de agendamento (vindos do Redash)
-df_agendamento = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\[SEEC-RN]_Agendamento_de_Avaliações_por_turmas_2026_10_19.csv")
+df_agendamento = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\[SEEC-RN]_Agendamento_de_Avaliações_por_turmas_2026_10_26.csv")
 
 
 # Manter somente os valores que possuem '2º Ciclo' e '2º ciclo' na coluna 'Nome da Avaliação'
@@ -637,7 +674,7 @@ df_escolas_0 = df_agendamento[
 
 
 # Salvar em Excel o dataframe
-with pd.ExcelWriter(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261019_Agendamento_RAPP.xlsx") as writer:
+with pd.ExcelWriter(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261026_Agendamento_RAPP.xlsx") as writer:
     df_agendamento.to_excel(writer, sheet_name='Agendamento', index=False)
     df_turmas_agendadas.to_excel(writer, sheet_name='Turmas Agendadas', index=False)
     df_escolas_100.to_excel(writer, sheet_name='Escolas 100% Agendadas', index=False)
