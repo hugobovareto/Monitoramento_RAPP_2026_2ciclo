@@ -249,7 +249,7 @@ df_final = df_final.drop(columns=['SITUAÇÃO FINAL', 'MÉDIA FINAL'])
 
 
 # Carregar dados do Redash (para ter nota e tempo de prova do estudante)
-df_redash = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\SEEC-RN_-_Rendimento_e_participação_dos_alunos_p_provas_-_RAPP_-_Avaliações_em_andamento_2026_10_26.csv")
+df_redash = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\SEEC-RN_-_Rendimento_e_participação_dos_alunos_p_provas_-_RAPP_-_Avaliações_em_andamento_2026_10_27.csv")
 
 # Manter somente os valores que possuem '2º Ciclo' e '2º ciclo' na coluna 'name'
 df_redash = df_redash[df_redash['name'].str.contains('2º ciclo', case=False, na=False)]
@@ -390,16 +390,51 @@ df_aprovados = df_1ciclo.loc[
     ['MATRÍCULA', 'COMPONENTE']
 ]
 
-# Exclui do df_merged as linhas com a mesma matrícula e componente do df_aprovados
-df_merged = df_merged.loc[
-    ~df_merged.set_index(['MATRÍCULA', 'COMPONENTE CURRICULAR']).index.isin(
-        df_aprovados.set_index(['MATRÍCULA', 'COMPONENTE']).index
-    )
-].copy()
+
+# Normaliza as chaves do df_merged
+merged_norm = df_merged[['MATRÍCULA', 'COMPONENTE CURRICULAR']].copy()
+
+merged_norm['MATRÍCULA'] = (
+    merged_norm['MATRÍCULA']
+    .astype('string')
+    .str.strip()
+    .str.replace(r'\.0$', '', regex=True)
+)
+
+merged_norm['COMPONENTE CURRICULAR'] = (
+    merged_norm['COMPONENTE CURRICULAR']
+    .astype('string')
+    .str.strip()
+)
+
+# Normaliza as chaves do df_aprovados
+aprovados_norm = df_aprovados[['MATRÍCULA', 'COMPONENTE']].copy()
+
+aprovados_norm['MATRÍCULA'] = (
+    aprovados_norm['MATRÍCULA']
+    .astype('string')
+    .str.strip()
+    .str.replace(r'\.0$', '', regex=True)
+)
+
+aprovados_norm['COMPONENTE'] = (
+    aprovados_norm['COMPONENTE']
+    .astype('string')
+    .str.strip()
+)
+
+# Identifica as combinações que devem ser excluídas
+chaves_merged = pd.MultiIndex.from_frame(merged_norm)
+chaves_aprovados = pd.MultiIndex.from_frame(aprovados_norm)
+
+mask_excluir = chaves_merged.isin(chaves_aprovados)
+
+# Exclui as linhas correspondentes
+df_merged = df_merged.loc[~mask_excluir].copy()
 
 
 # Exportar a base final em Excel para usar na aplicação em Google Apps Script
-df_merged.to_excel(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261026_Monitoramento_RAPP.xlsx", index=False)
+df_merged.to_excel(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261027_Monitoramento_RAPP.xlsx", index=False)
 
 
 
@@ -474,7 +509,7 @@ import re
 
 
 # Carregar os dados de agendamento (vindos do Redash)
-df_agendamento = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\[SEEC-RN]_Agendamento_de_Avaliações_por_turmas_2026_10_26.csv")
+df_agendamento = pd.read_csv(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\[SEEC-RN]_Agendamento_de_Avaliações_por_turmas_2026_10_27.csv")
 
 
 # Manter somente os valores que possuem '2º Ciclo' e '2º ciclo' na coluna 'Nome da Avaliação'
@@ -674,7 +709,7 @@ df_escolas_0 = df_agendamento[
 
 
 # Salvar em Excel o dataframe
-with pd.ExcelWriter(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261026_Agendamento_RAPP.xlsx") as writer:
+with pd.ExcelWriter(r"D:\Scripts_Python\FGV\Monitoramento_RAPP_2026_2ciclo\20261027_Agendamento_RAPP.xlsx") as writer:
     df_agendamento.to_excel(writer, sheet_name='Agendamento', index=False)
     df_turmas_agendadas.to_excel(writer, sheet_name='Turmas Agendadas', index=False)
     df_escolas_100.to_excel(writer, sheet_name='Escolas 100% Agendadas', index=False)
